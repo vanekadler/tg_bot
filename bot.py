@@ -119,25 +119,30 @@ async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
-if __name__ == "__main__":
-    asyncio.run(main())
-import uvicorn
+import os
+import asyncio
 from fastapi import FastAPI
+import uvicorn
 
 app = FastAPI()
+
 @app.get("/")
-async def root():
+async def health_check():
     return {"status": "Bot is running"}
 
+def run_server():
+    port = int(os.getenv("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
 if __name__ == "__main__":
-    import threading
-    # Запускаем FastAPI сервер в отдельном потоке
-    server_thread = threading.Thread(
-        target=uvicorn.run,
-        kwargs={"app": app, "host": "0.0.0.0", "port": int(os.getenv("PORT", 10000))}
-    )
+    from threading import Thread
+
+    # Запускаем веб-сервер в отдельном потоке
+    server_thread = Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
 
-    # Запускаем бота
+    # Запускаем Telegram-бота
     asyncio.run(main())
+
+
