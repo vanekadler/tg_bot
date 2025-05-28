@@ -135,4 +135,8 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"[ERROR] {e}")
             asyncio.sleep(5)  # Ждём перед перезапуском
+# 📬 Команда /getmyid
+@router.message(F.text == "/getmyid")
+async def get_my_id(message: Message):
+    await message.answer(f"Bot ID: {message.bot.id}")
 
