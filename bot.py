@@ -121,3 +121,23 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+import uvicorn
+from fastapi import FastAPI
+
+app = FastAPI()
+@app.get("/")
+async def root():
+    return {"status": "Bot is running"}
+
+if __name__ == "__main__":
+    import threading
+    # Запускаем FastAPI сервер в отдельном потоке
+    server_thread = threading.Thread(
+        target=uvicorn.run,
+        kwargs={"app": app, "host": "0.0.0.0", "port": int(os.getenv("PORT", 10000))}
+    )
+    server_thread.daemon = True
+    server_thread.start()
+
+    # Запускаем бота
+    asyncio.run(main())
