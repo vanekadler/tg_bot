@@ -1,5 +1,5 @@
-import os
 import asyncio
+import os
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -89,14 +89,14 @@ async def handle_order_text(message: Message):
 async def faq_handler(message: Message):
     faq = (
         "❓ <b>Часто задаваемые вопросы:</b>\n\n"
-        "1. <b>Как оплатить?</b>\n— Переводом на карту/Выставления счёта на ЮР лицо(клинику).\n\n"
+        "1. <b>Как оплатить?</b>\n— Переводом на карту.\n\n"
         "2. <b>Как происходит доставка?</b>\n— Через СДЭК или Boxberry.\n\n"
         "3. <b>Есть ли гарантия?</b>\n— Да, на все товары действует официальная гарантия.\n\n"
         "4. <b>Как получить консультацию?</b>\n— Напишите ваш вопрос — мы ответим лично."
     )
     await message.answer(faq)
 
-# 📢 Подписаться на рассылку
+# 📢 Подписка на рассылку
 @router.message(F.text == "📢 Подписаться на рассылку")
 async def subscribe_handler(message: Message):
     await message.answer("✅ Вы подписаны на рассылку. Новости и акции будут приходить сюда!")
@@ -123,9 +123,16 @@ def run_server():
 if __name__ == "__main__":
     from threading import Thread
 
+    # Запускаем FastAPI сервер в отдельном потоке
     server_thread = Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
 
-    asyncio.run(main())
+    # Защита от TelegramConflictError — перезапуск при ошибке
+    while True:
+        try:
+            asyncio.run(main())
+        except Exception as e:
+            print(f"[ERROR] {e}")
+            asyncio.sleep(5)  # Ждём перед перезапуском
 
