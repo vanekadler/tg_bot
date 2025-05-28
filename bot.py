@@ -1,8 +1,9 @@
+import os
 import asyncio
-from aiogram import Bot, Dispatcher, F
+from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
 from aiogram.client.default import DefaultBotProperties
 
 # 🔐 Токен бота
@@ -11,15 +12,10 @@ TOKEN = "8093577977:AAFpJGqDIGSWIWi21zP3SUAdVEiZ8-wOaCg"
 # 👤 ID администратора
 ADMIN_ID = 6270030591
 
-# 🔧 Инициализация
-from aiogram import Router
-
+# 🧠 Инициализация
 router = Router()
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-
-# 🧠 Подключаем роутеры
-dp.include_router(router)
 
 # 📦 Клавиатура
 main_keyboard = ReplyKeyboardMarkup(
@@ -33,18 +29,28 @@ main_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# 🧾 Обработчик /start
+# 💰 Прайс-лист
+price_list = """
+<b>Прайс-лист:</b>
+
+1. ФАЙЛЫ S FLEXI — 2 100₽
+2. ФАЙЛЫ R SHAPER — 1 700₽
+3. ФАЙЛЫ ENDOVIEW — 2 500₽
+4. ФАЙЛЫ APEX MAX — 2 250₽
+5. ФАЙЛЫ GOLD TAPER — 2 050₽
+6. ФАЙЛЫ N TWO — 1 250₽
+7. ФАЙЛЫ KID FILE — 1 200₽
+8. ФАЙЛЫ REATREAT — 2 150₽
+9. ФАЙЛЫ SAFE OPENER — 1 900₽
+10. ФАЙЛЫ GLYDE MASTER — 1 900₽
+"""
+
+# /start
 @router.message(F.text == "/start")
 async def start_handler(message: Message):
     await message.answer("👋 Привет! Выбери команду:", reply_markup=main_keyboard)
 
-# 📋 Прайс-лист
-price_list = """
-<b>Прайс-лист:</b>
-...
-"""
-
-# 📄 Обработчик "📋 Прайс"
+# 📋 Прайс
 @router.message(F.text == "📋 Прайс")
 async def handle_price(message: Message):
     await message.answer(price_list)
@@ -54,7 +60,7 @@ async def handle_price(message: Message):
     except FileNotFoundError:
         await message.answer("❌ PDF-файл прайса не найден.")
 
-# 📦 Обработчик "Наличие на складе"
+# 📦 Наличие на складе
 @router.message(F.text == "📦 Наличие на складе")
 async def stock_handler(message: Message):
     try:
@@ -64,12 +70,12 @@ async def stock_handler(message: Message):
     except FileNotFoundError:
         await message.answer("❌ Не удалось загрузить данные о наличии товаров.")
 
-# 📝 Обработчик "Сделать заказ"
+# 📝 Сделать заказ
 @router.message(F.text == "📝 Сделать заказ")
 async def order_handler(message: Message):
     await message.answer("✍️ Напишите, пожалуйста, какие товары вы хотите заказать. Укажите количество и контакт для связи.")
 
-# 📬 Отправка заказа админу
+# 📬 Обработка текста как заказа
 @router.message(F.text & ~F.text.in_(["📋 Прайс", "📦 Наличие на складе", "📝 Сделать заказ", "❓ FAQ", "📢 Подписаться на рассылку"]))
 async def handle_order_text(message: Message):
     if message.reply_to_message and "заказать" in message.reply_to_message.text.lower():
@@ -90,19 +96,19 @@ async def faq_handler(message: Message):
     )
     await message.answer(faq)
 
-# 📢 Подписка на рассылку
+# 📢 Подписаться на рассылку
 @router.message(F.text == "📢 Подписаться на рассылку")
 async def subscribe_handler(message: Message):
     await message.answer("✅ Вы подписаны на рассылку. Новости и акции будут приходить сюда!")
 
-# 🚀 Запуск бота
+# ▶️ Запуск бота
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 # 🌐 Минимальный FastAPI сервер для Render
-import uvicorn
 from fastapi import FastAPI
+import uvicorn
 
 app = FastAPI()
 
@@ -115,15 +121,11 @@ def run_server():
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
-    import os
     from threading import Thread
 
-    # Запускаем FastAPI сервер в отдельном потоке
     server_thread = Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
 
-    # Запускаем Telegram-бота с защитой от крашей
     asyncio.run(main())
-
 
