@@ -1,5 +1,5 @@
-import asyncio
 import os
+import asyncio
 from aiogram import Bot, Dispatcher, F, Router
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -12,7 +12,7 @@ TOKEN = "8093577977:AAFpJGqDIGSWIWi21zP3SUAdVEiZ8-wOaCg"
 # 👤 ID администратора
 ADMIN_ID = 6270030591
 
-# 🧠 Инициализация
+# 🧠 Инициализация роутера и диспетчера
 router = Router()
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -75,7 +75,7 @@ async def stock_handler(message: Message):
 async def order_handler(message: Message):
     await message.answer("✍️ Напишите, пожалуйста, какие товары вы хотите заказать. Укажите количество и контакт для связи.")
 
-# 📬 Обработка текста как заказа
+# 📬 Отправка заказа админу
 @router.message(F.text & ~F.text.in_(["📋 Прайс", "📦 Наличие на складе", "📝 Сделать заказ", "❓ FAQ", "📢 Подписаться на рассылку"]))
 async def handle_order_text(message: Message):
     if message.reply_to_message and "заказать" in message.reply_to_message.text.lower():
@@ -89,7 +89,7 @@ async def handle_order_text(message: Message):
 async def faq_handler(message: Message):
     faq = (
         "❓ <b>Часто задаваемые вопросы:</b>\n\n"
-        "1. <b>Как оплатить?</b>\n— Переводом на карту.\n\n"
+        "1. <b>Как оплатить?</b>\n— Переводом на карту/Выставление счёта на ЮР лицо(клинику).\n\n"
         "2. <b>Как происходит доставка?</b>\n— Через СДЭК или Boxberry.\n\n"
         "3. <b>Есть ли гарантия?</b>\n— Да, на все товары действует официальная гарантия.\n\n"
         "4. <b>Как получить консультацию?</b>\n— Напишите ваш вопрос — мы ответим лично."
@@ -121,22 +121,19 @@ def run_server():
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
+    # Защита от создания нескольких event loops
+    try:
+        # Если уже есть активный event loop, используем его
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # Иначе создаём новый
+        loop = asyncio.new_event_loop()
+    
     from threading import Thread
 
-    # Запускаем FastAPI сервер в отдельном потоке
     server_thread = Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
 
-    # Защита от TelegramConflictError — перезапуск при ошибке
-    while True:
-        try:
-            asyncio.run(main())
-        except Exception as e:
-            print(f"[ERROR] {e}")
-            asyncio.sleep(5)  # Ждём перед перезапуском
-# 📬 Команда /getmyid
-@router.message(F.text == "/getmyid")
-async def get_my_id(message: Message):
-    await message.answer(f"Bot ID: {message.bot.id}")
+    loop.run_until_complete(main())
 
