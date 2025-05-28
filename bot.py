@@ -133,4 +133,7 @@ if __name__ == "__main__":
 
     # Запускаем Telegram-бота
     loop.run_until_complete(main())
+@router.message(F.text == "/getmyid")
+async def get_my_id(message: Message):
+    await message.answer(f"🤖 Текущий ID бота: <code>{message.bot.id}</code>", parse_mode="HTML")
 
