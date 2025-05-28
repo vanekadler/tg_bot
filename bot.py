@@ -1,22 +1,27 @@
 import asyncio
-from aiogram import Bot, Dispatcher, F, Router
+from aiogram import Bot, Dispatcher, F
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, FSInputFile
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.client.default import DefaultBotProperties
 
 # 🔐 Токен бота
 TOKEN = "8093577977:AAFpJGqDIGSWIWi21zP3SUAdVEiZ8-wOaCg"
 
-# 👤 ID для получения заказов
+# 👤 ID администратора
 ADMIN_ID = 6270030591
 
 # 🔧 Инициализация
+from aiogram import Router
+
 router = Router()
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-# 🧾 Клавиатура
+# 🧠 Подключаем роутеры
+dp.include_router(router)
+
+# 📦 Клавиатура
 main_keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📋 Прайс")],
@@ -28,41 +33,18 @@ main_keyboard = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# 💰 Прайс-лист
-price_list = """
-<b>Прайс-лист:</b>
-1. ФАЙЛЫ S FLEXI — 2 100₽
-2. ФАЙЛЫ R SHAPER — 1 700₽
-3. ФАЙЛЫ ENDOVIEW — 2 500₽
-4. ФАЙЛЫ APEX MAX — 2 250₽
-5. ФАЙЛЫ GOLD TAPER — 2 050₽
-6. ФАЙЛЫ N TWO — 1 250₽
-7. ФАЙЛЫ KID FILE — 1 200₽
-8. ФАЙЛЫ REATREAT — 2 150₽
-9. ФАЙЛЫ SAFE OPENER — 1 900₽
-10. ФАЙЛЫ GLYDE MASTER — 1 900₽
-11. ФАЙЛЫ РУЧНЫЕ Н и К — 190₽
-12. Апекслокатор APEX03s — 19 300₽
-13. Апекслокатор APICCOLO — 22 300₽
-14. Мотор R1 VORTEX — 39 200₽
-15. Эндоактиватор EASYDO — 17 400₽
-16. Инжектор GUTTAFILL02 — 67 500₽
-17. Термоплаггер GUTTAEST02 — 37 900₽
-18. SSG PLUG 1-NiTi — 2 800₽
-19. SSG PLUG 1/2 — 2 800₽
-20. SSG PLUG 3/4 — 2 800₽
-21. Лампа ALLADIN02 — 12 250₽
-22. Линейка R1 PLUS — 5 300₽
-23. Игла 23G — 3 800₽
-24. Игла 25G — 3 800₽
-"""
-
-# /start
+# 🧾 Обработчик /start
 @router.message(F.text == "/start")
 async def start_handler(message: Message):
     await message.answer("👋 Привет! Выбери команду:", reply_markup=main_keyboard)
 
-# 📋 Прайс
+# 📋 Прайс-лист
+price_list = """
+<b>Прайс-лист:</b>
+...
+"""
+
+# 📄 Обработчик "📋 Прайс"
 @router.message(F.text == "📋 Прайс")
 async def handle_price(message: Message):
     await message.answer(price_list)
@@ -72,7 +54,7 @@ async def handle_price(message: Message):
     except FileNotFoundError:
         await message.answer("❌ PDF-файл прайса не найден.")
 
-# 📦 Наличие на складе
+# 📦 Обработчик "Наличие на складе"
 @router.message(F.text == "📦 Наличие на складе")
 async def stock_handler(message: Message):
     try:
@@ -82,12 +64,12 @@ async def stock_handler(message: Message):
     except FileNotFoundError:
         await message.answer("❌ Не удалось загрузить данные о наличии товаров.")
 
-# 📝 Сделать заказ
+# 📝 Обработчик "Сделать заказ"
 @router.message(F.text == "📝 Сделать заказ")
 async def order_handler(message: Message):
     await message.answer("✍️ Напишите, пожалуйста, какие товары вы хотите заказать. Укажите количество и контакт для связи.")
 
-# 📬 Обработка текста как заказа
+# 📬 Отправка заказа админу
 @router.message(F.text & ~F.text.in_(["📋 Прайс", "📦 Наличие на складе", "📝 Сделать заказ", "❓ FAQ", "📢 Подписаться на рассылку"]))
 async def handle_order_text(message: Message):
     if message.reply_to_message and "заказать" in message.reply_to_message.text.lower():
@@ -101,28 +83,26 @@ async def handle_order_text(message: Message):
 async def faq_handler(message: Message):
     faq = (
         "❓ <b>Часто задаваемые вопросы:</b>\n\n"
-        "1. <b>Как оплатить?</b>\n— Переводом на карту.\n\n"
+        "1. <b>Как оплатить?</b>\n— Переводом на карту/Выставления счёта на ЮР лицо(клинику).\n\n"
         "2. <b>Как происходит доставка?</b>\n— Через СДЭК или Boxberry.\n\n"
         "3. <b>Есть ли гарантия?</b>\n— Да, на все товары действует официальная гарантия.\n\n"
         "4. <b>Как получить консультацию?</b>\n— Напишите ваш вопрос — мы ответим лично."
     )
     await message.answer(faq)
 
-# 📢 Подписаться на рассылку
+# 📢 Подписка на рассылку
 @router.message(F.text == "📢 Подписаться на рассылку")
 async def subscribe_handler(message: Message):
     await message.answer("✅ Вы подписаны на рассылку. Новости и акции будут приходить сюда!")
 
-# ▶️ Запуск
+# 🚀 Запуск бота
 async def main():
-    dp.include_router(router)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
-import os
-import asyncio
-from fastapi import FastAPI
+# 🌐 Минимальный FastAPI сервер для Render
 import uvicorn
+from fastapi import FastAPI
 
 app = FastAPI()
 
@@ -135,14 +115,15 @@ def run_server():
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
+    import os
     from threading import Thread
 
-    # Запускаем веб-сервер в отдельном потоке
+    # Запускаем FastAPI сервер в отдельном потоке
     server_thread = Thread(target=run_server)
     server_thread.daemon = True
     server_thread.start()
 
-    # Запускаем Telegram-бота
+    # Запускаем Telegram-бота с защитой от крашей
     asyncio.run(main())
 
 
